@@ -1,9 +1,65 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { toggleMenu } from '../utils/appSlice';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { YOUTUBE_SEARCH_API } from '../utils/contants';
+import { cacheResults } from '../utils/searchSlice';
+import { json } from 'react-router-dom';
 
 const Head = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const searchCache = useSelector((store) => store.search);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    // make an api call after every key press
+    // but if the difference between 2 API calls is <200ms
+    // decline the API call
+    const timer = setTimeout(() => {
+      if (searchCache[searchQuery]) {
+        setSuggestions(searchCache[searchQuery]);
+      } else {
+        getSearchSuggestions();
+      }
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
+
+  /**
+   *
+   * key - i
+   * - render the component
+   * - useEffect();
+   * - start timer => make api call after 200ms
+   *
+   * key - ip
+   * - destory the component(useEffect return method)
+   * - re-render the component
+   * - useEffect()
+   * - start timer => make api call after 200 ms
+   *
+   * setTimeout(200) - make an API call
+   *
+   */
+
+  const getSearchSuggestions = async () => {
+    const data = await fetch(YOUTUBE_SEARCH_API + searchQuery);
+    const json = await data.json();
+    setSuggestions(json[1]);
+
+    // update cache
+
+    dispatch(
+      cacheResults({
+        [searchQuery]: json[1],
+      })
+    );
+  };
 
   const toggleMenuHandler = () => {
     dispatch(toggleMenu());
@@ -27,14 +83,31 @@ const Head = () => {
         </a>
       </div>
       <div className="col-span-10 px-10">
-        <input
-          className="w-1/2 border border-gray-400 rounded-s-2xl p-2"
-          placeholder="Search"
-          type="text"
-        />
-        <button className="border border-gray-400 p-2 rounded-e-2xl bg-gray-100">
-          🔍
-        </button>
+        <div>
+          <input
+            className="w-1/2 border border-gray-400 rounded-s-2xl p-2"
+            placeholder="Search"
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setShowSuggestions(false)}
+          />
+          <button className="border border-gray-400 p-2 rounded-e-2xl bg-gray-100">
+            🔍
+          </button>
+        </div>
+        {showSuggestions && (
+          <div className="fixed bg-white py-2 px-2 w-[26rem] shadow-lg rounded-lg border-gray-400">
+            <ul>
+              {suggestions.map((s) => (
+                <li key={s} className="py-2 px-3 shadow-sm hover:bg-gray-100">
+                  🔍 {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
       <div className="flex h-8 col-span-1">
         <img
