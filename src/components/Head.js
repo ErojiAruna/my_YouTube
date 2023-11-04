@@ -3,7 +3,6 @@ import { toggleMenu } from '../utils/appSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { YOUTUBE_SEARCH_API } from '../utils/contants';
 import { cacheResults } from '../utils/searchSlice';
-import { json } from 'react-router-dom';
 
 const Head = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,9 +13,6 @@ const Head = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // make an api call after every key press
-    // but if the difference between 2 API calls is <200ms
-    // decline the API call
     const timer = setTimeout(() => {
       if (searchCache[searchQuery]) {
         setSuggestions(searchCache[searchQuery]);
@@ -29,23 +25,6 @@ const Head = () => {
       clearTimeout(timer);
     };
   }, [searchQuery]);
-
-  /**
-   *
-   * key - i
-   * - render the component
-   * - useEffect();
-   * - start timer => make api call after 200ms
-   *
-   * key - ip
-   * - destory the component(useEffect return method)
-   * - re-render the component
-   * - useEffect()
-   * - start timer => make api call after 200 ms
-   *
-   * setTimeout(200) - make an API call
-   *
-   */
 
   const getSearchSuggestions = async () => {
     const data = await fetch(YOUTUBE_SEARCH_API + searchQuery);
@@ -65,7 +44,7 @@ const Head = () => {
     dispatch(toggleMenu());
   };
   return (
-    <div className="grid grid-flow-col p-2 m-2 shadow-lg">
+    <div className="grid grid-flow-col p-2 m-2">
       <div className="flex col-span-1 w-full h-full">
         <img
           onClick={() => toggleMenuHandler()}
